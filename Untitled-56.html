@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no" />
+
+  <title>
+    步履千寻
+  </title>
+
+
+
+</head>
+
+
+<body>
+
+
+  <!--built files will be auto injected-->
+</body>
+<script>
+  var fn = curry((a, b, c) => {
+    console.log([a, b, c])
+  })
+
+  function curry(fn, args) {
+    var length = fn.length;
+    //  console.log(length)
+    args = args || [];
+    return function() {
+      var _args = args.slice(0),
+        arg, i;
+      for (i = 0; i < arguments.length; i++) {
+        arg = arguments[i];
+        // console.log(arguments)
+        _args.push(arg);
+      }
+      console.log(_args)
+      if (_args.length < length) {
+            return curry.call(this, fn, _args);
+        }
+        else {
+            return fn.apply(this, _args);
+        }
+    }
+  }
+  
+  let arr=["a","b","c"]
+  // fn(...arr);
+  
+</script>
+
+</html>

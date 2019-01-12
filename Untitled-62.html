@@ -1,0 +1,37 @@
+
+            <!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no" />
+
+  <title>
+    步履千寻
+  </title>
+
+
+
+</head>
+
+
+<body>
+
+
+  <!--built files will be auto injected-->
+</body>
+<script>
+  var curry = fn =>
+    judge = (...args) =>
+        args.length === fn.length
+            ? fn(...args)
+            : (arg) => judge(...args, arg)
+   
+    var fn=curry((a,b,c)=>{
+    console.log([a,b,c])
+    })
+  fn("a")("b")("c");
+  
+</script>
+
+</html>

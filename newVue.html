@@ -1,0 +1,246 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>proxyVue</title>
+    <style>
+        #app {
+            margin: 100px auto 0 auto;
+            width: 300px;
+        }
+        #btn {
+            margin: 10px auto;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <h1>开发语言：{{language}}</h1>
+      <h2>组成部分：</h2>
+      <ul>
+        <li>{{makeUp.one}}</li>
+        <li>{{makeUp.two}}</li>
+        <li>{{makeUp.three}}</li>
+      </ul>
+      <h2>描述：</h2>
+      <p>{{describe}}</p>
+      <p>计算属性：{{sum}}</p>
+      <input placeholder="123" v-module="language" />
+    </div>
+  </body>
+
+  <script>
+   class Vue {
+     constructor(options){
+        this.$options=options||{}
+        this.$methods=this._methods=options.methods
+        const data=options.data || {}
+        this.subscribe = {};
+        new Compile(options.el,data)
+        this.observe(data)
+        // this.compile(options.el)
+     }
+     observe(data){ 
+      const that = this;
+     this.$data=new Proxy(data,{
+        get(target,key){
+            return target[key]
+        },
+        set(target,key,value,receiver){
+            let res = Reflect.set(target, key, value);
+            that.subscribe[key].map(item => {
+              item.update();
+            });
+            console.log(value)
+            return res;
+        }
+
+     })
+     }
+
+     publish(node,attr,data,key){
+      if(!this.subscribe[key]){
+        this.subscribe[key]=[]
+        
+      }
+      let obj={
+        node,
+        attr,
+        data,
+        key,
+        update(){
+          this.node[this.attr] = this.data[this.key];
+        }
+      }
+      console.log(obj)
+      this.subscribe[key].push(obj)
+      
+     }
+     
+     compile(dom){
+        const nodes = Array.prototype.slice.call(
+          document.querySelector(dom).children
+        );
+        console.log(nodes)
+        let data = this.$data;
+       nodes.map(node=>{
+             if (node.hasAttribute("v-click")||node.hasAttribute("@click")) {
+            let methodName = node.getAttribute("v-click");
+            let mothod = this.$methods[methodName].bind(data);
+            node.addEventListener("click", mothod);
+          }
+
+          if (node.hasAttribute("v-bind")) {
+            let key = node.getAttribute("v-bind");
+            this.publish( node,"innerHTML",data,key)
+          }
+
+          if(node.hasAttribute("v-model")){
+              let key = node.getAttribute("v-model");
+              this.publish(node,"value",data,key)
+              
+              node.addEventListener("input", () => {
+              data[key] = node.value;
+            });
+          }
+
+          if(node.hasAttribute("v-for")){
+            let key=node.getAttribute("v-model");
+            this.render()
+          }
+
+       })
+     }
+
+    
+     
+
+
+   }
+   
+
+   class Compile{
+    constructor(el,vm){
+      this.el=el;
+      this.vm=vm;
+      this.element=document.querySelector(el);
+      this.fragment = document.createDocumentFragment()
+      
+      this.init()
+
+    }
+    init(){
+      let element = this.element
+      this.fragment.append(element)
+      this.replaceDom(this.fragment)
+      document.body.appendChild(this.fragment)
+    }
+    replaceDom(fragDom){
+    let vm=this.vm
+    // console.log(vm)
+     Array.from(fragDom.childNodes).forEach(item=>{
+      let txt = item.textContent
+        let reg = /\{\{(.*?)\}\}/g
+        // console.log(item,item.nodeType)
+        if(item.nodeType===1){
+            let attr=item.attributes
+            Array.from(attr).forEach(attr => {
+							let name = attr.name
+							let exp = attr.value
+							if (name.includes('v-model')){
+                item.value = vm[exp]
+                item.addEventListener('input', e => {
+                  let newVal = e.target.value
+                 
+                  vm[exp] = newVal
+                })
+							}
+					});
+        }else if(item.nodeType === 3 && reg.test(txt)){
+          item.textContent = txt.replace(reg, (matched, placeholder) => {
+                   console.log(placeholder)
+							// new Watcher(vm, placeholder, replaceTxt);   // 监听变化，进行匹配替换内容
+							return placeholder.split('.').reduce((val, key) => {
+								return val[key]
+							}, vm)
+						})
+            console.log(item.textContent)
+        }
+
+        if (item.childNodes && item.childNodes.length) {
+					this.replaceDom(item)
+				}
+
+     })
+    }
+   }
+
+  class Computed{
+   
+
+
+
+  }
+
+   
+   class Watcher {
+    constructor (vm, exp, fn) {
+      this.fn = fn
+      this.vm = vm
+      this.exp = exp
+      Dep.exp = exp
+      Dep.target = this
+      let arr = exp.split('.')
+      let val = vm
+      arr.forEach(key => {
+        val = val[key]
+      })
+      Dep.target = null
+    }
+    update() {
+      let exp = this.exp
+			let arr = exp.split('.')
+			let val = this.vm
+			arr.forEach(key => {
+				val = val[key]
+			})
+			this.fn(val)
+		}
+  }
+
+
+
+   window.onload=function () {
+       let vm=new Vue({
+        el: '#app',
+		data: {
+			language: 'Javascript',
+			makeUp: {
+				one: 'ECMAScript',
+				two: '文档对象模型（DOM）',
+				three: '浏览器对象模型（BOM）'
+			},
+			describe: '没什么产品是写不了的',
+			a: 1,
+			b: 2
+		},
+    computed: {
+      sum() {
+        return this.a + this.b
+      }
+		},
+		mounted() {
+			console.log('i am mounted', this.a)
+		}
+
+       })
+       
+   }
+
+
+  </script>
+</html>
